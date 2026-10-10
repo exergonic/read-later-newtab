@@ -263,6 +263,10 @@ function pinTile(site) {
   img.src = faviconUrl(site.url);
   img.alt = '';
   img.loading = 'lazy';
+  // Images are draggable by default, which would make the favicon the drag
+  // source (the ghost becomes just the icon, and the drag carries the image
+  // URL). Keep the tile itself as the thing being dragged.
+  img.draggable = false;
   // Chrome returns a generic globe when it has no icon; that still opens fine.
   img.addEventListener('error', () => { img.remove(); }, { once: true });
   box.appendChild(img);
@@ -327,17 +331,26 @@ grid.addEventListener('dragleave', (e) => {
 
 grid.addEventListener('drop', async (e) => {
   e.preventDefault();
-  clearDropMarks();
+  // Read everything the reorder needs before the first await. The browser fires
+  // `dragend` as soon as the drop is dispatched, and that handler clears
+  // dragUrl - so reading it after an await finds null, `from` becomes -1, and
+  // the reorder silently does nothing.
+  const source = dragUrl;
   const li = e.target.closest('.pin-tile');
-  if (!li || !dragUrl || li.dataset.url === dragUrl) return;
+  const target = li ? li.dataset.url : null;
+  clearDropMarks();
+  if (!source || !target || target === source) return;
   const sites = await getPinned();
-  const from = sites.findIndex((s) => s.url === dragUrl);
-  const to = sites.findIndex((s) => s.url === li.dataset.url);
+  const from = sites.findIndex((s) => s.url === source);
+  const to = sites.findIndex((s) => s.url === target);
   if (from < 0 || to < 0) return;
   const [moved] = sites.splice(from, 1);
-  sites.splice(to, 0, moved);
+  // The marker is drawn to the left of the hovered tile, so the item belongs at
+  // that index - but removing the dragged item already shifted everything after
+  // it down by one.
+  sites.splice(from < to ? to - 1 : to, 0, moved);
   await savePinned(sites);
-  renderPinned();
+  await renderPinned();
 });
 
 grid.addEventListener('dragend', () => {
