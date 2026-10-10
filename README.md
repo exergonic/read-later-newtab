@@ -1,7 +1,24 @@
+<div align="center">
+
 # Read Later New Tab
 
-A minimal Brave/Chrome extension that replaces the new tab page with your
-pinned sites and your read-later list. No accounts, no cloud, no analytics.
+A Brave/Chrome new tab page that works for you: a grid of pinned site tiles, a
+read-later list you control, recently closed tabs, and the tabs open on your
+synced devices.
+
+Five source files, no build step, no dependencies, no network calls.
+
+[![license: MIT](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](LICENSE)
+[![Chrome Manifest V3](https://img.shields.io/badge/chrome-Manifest_V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+![dependencies: 0](https://img.shields.io/badge/dependencies-0-success?style=flat-square)
+[![network calls: 0](https://img.shields.io/badge/network_calls-0-success?style=flat-square)](#privacy)
+![no build step](https://img.shields.io/badge/no_build_step-vanilla_JS-f7df1e?style=flat-square)
+
+No accounts, no cloud, no analytics.
+
+</div>
+
+![The new tab page: pinned site tiles, the read later list, recently closed tabs, and tabs open on other devices](docs/newtab.png)
 
 ## What it does
 
@@ -33,10 +50,18 @@ new tab.
 
 ## Install
 
-1. Open `brave://extensions` (or `chrome://extensions`).
-2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and select this folder.
-4. Open a new tab — that's it.
+This is an unpacked extension — there is no browser-store listing, so you load
+the folder yourself.
+
+1. Get the files: `git clone https://github.com/exergonic/read-later-newtab.git`
+   (or **Code → Download ZIP** and unpack it).
+2. Open `brave://extensions` (or `chrome://extensions`).
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked** and select this folder.
+5. Open a new tab — that's it.
+
+Requires Chromium 116 or newer (the save confirmation awaits the promise form of
+`chrome.notifications`).
 
 If you edit any file after that, click **Reload** on the extension card, or the
 change will not take effect.
@@ -68,12 +93,26 @@ invalid and the extension silently stops loading.
   `favicon` (site icons in the tile grid and in the save notification),
   `notifications` (the "added to Read Later" confirmation).
 
-## Files
+## How the pieces fit
+
+```
+right-click / Ctrl+Shift+E
+        │
+        ▼
+background.js (service worker) ──▶ chrome.storage.local
+                                        │
+     newtab.html + newtab.js ──renders──┘
+```
+
+The service worker owns the context-menu entries, the keyboard shortcut and the
+save notification; the new tab page is a plain page that reads the same storage.
+Neither makes a network request.
 
 - `manifest.json` — MV3 manifest, new-tab override, context menus, shortcut,
   permissions.
 - `background.js` — service worker: context-menu entries + shortcut → storage.
 - `newtab.html` / `newtab.css` / `newtab.js` — the new tab page.
+- `docs/newtab.png` — the screenshot above.
 
 ## Known rough edges
 
@@ -85,7 +124,14 @@ invalid and the extension silently stops loading.
   fresh id (and clears the previous notification); a fixed id would pop only
   once, then update the entry already in the notification center silently.
 - Dismisses in the "other devices" lane do not persist.
+- A tile is reordered by dropping it on another tile: the dragged tile lands on
+  the side the drop marker shows. Dropping in the gap *between* tiles does
+  nothing.
 - `MAX_ITEMS` (200) is duplicated in `background.js` and `newtab.js`; the two
   caps could drift apart if one is edited.
 - A tile's label is derived from the page title or hostname and clipped to 28
   characters, so long titles are abbreviated.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
