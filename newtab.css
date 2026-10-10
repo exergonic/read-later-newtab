@@ -231,6 +231,9 @@ h2 {
   border-radius: 6px;
 }
 .item-actions button:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+/* saved rows keep a permanent check instead of a clickable action */
+.item-actions button:disabled { cursor: default; color: var(--accent); }
+.item-actions button:disabled:hover { color: var(--accent); background: none; }
 .device-name { color: var(--dim); font-size: 12.5px; margin: 10px 0 2px; font-weight: 600; }
 .empty { color: var(--dim); font-size: 14px; padding: 8px; }
 /* --- background picker ---------------------------------------------------- */

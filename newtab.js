@@ -80,7 +80,7 @@ function openUrl(url) {
 
 // --- rendering ---------------------------------------------------------------
 
-function itemRow({ url, title, metaHtml, onDismiss, onReopen }) {
+function itemRow({ url, title, metaHtml, onDismiss, onReopen, onSave, saved }) {
   const li = document.createElement('li');
   const a = document.createElement('a');
   a.className = 'item-link';
@@ -102,6 +102,37 @@ function itemRow({ url, title, metaHtml, onDismiss, onReopen }) {
     reopen.title = 'Reopen tab';
     reopen.addEventListener('click', onReopen);
     actions.appendChild(reopen);
+  }
+  if (onSave) {
+    const save = document.createElement('button');
+    save.className = 'item-save';
+    const markSaved = () => {
+      save.textContent = '✓';
+      save.title = 'In your Read later list';
+      save.disabled = true;
+    };
+    if (saved) {
+      markSaved();
+    } else {
+      save.textContent = '+';
+      save.title = 'Save to read later';
+      save.addEventListener('click', async () => {
+        save.disabled = true;                    // one write at a time
+        let done = false;
+        try {
+          // addItem() resolves false when the URL is already in the list, which
+          // is the same end state, so both results count as saved.
+          done = (await onSave()) !== false;
+        } catch { done = false; }
+        if (done) markSaved();
+        else {
+          save.textContent = '+';
+          save.title = 'Could not save — try again';
+          save.disabled = false;
+        }
+      });
+    }
+    actions.appendChild(save);
   }
   const dismiss = document.createElement('button');
   dismiss.textContent = '✕';
@@ -220,6 +251,7 @@ async function renderDevices() {
     return;
   }
   const hidden = renderDevices.hidden || (renderDevices.hidden = new Set());
+  const savedUrls = new Set((await getList()).map((item) => item.url));
   for (const device of perDevice) {
     const tabs = device.tabs.filter((t) => !hidden.has(device.name + '|' + t.url));
     if (!tabs.length) continue;
@@ -233,6 +265,13 @@ async function renderDevices() {
         url: t.url,
         title: t.title,
         metaHtml: `${t.when ? escapeHtml(ageString(t.when)) + ' · ' : ''}${escapeHtml(domainOf(t.url))}`,
+        saved: savedUrls.has(t.url),
+        onSave: async () => {
+          const added = await addItem(t.url, t.title);
+          // keep the list above in step with what was just saved
+          if (added) await renderSaved();
+          return added;
+        },
         onDismiss: async () => { hidden.add(key); },
       }));
     }
