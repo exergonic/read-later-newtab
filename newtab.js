@@ -193,33 +193,52 @@ async function renderDevices() {
   ul.innerHTML = '';
   let devices = [];
   try {
-    devices = await chrome.sessions.getDevices();
+    devices = await chrome.sessions.getDevices({ maxResults: 25 });
   } catch { /* sync unavailable */ }
-  devices = (devices || []).filter((d) => Array.isArray(d.tabs) && d.tabs.length);
-  if (!devices.length) {
-    ul.appendChild(emptyRow('No synced devices with open tabs. Turn on Brave Sync (with tab sync) to see your phone’s tabs here.'));
+  // A device is { deviceName, sessions } - not { deviceName, tabs }. Each foreign
+  // session is a window, and the open tabs hang off session.window.tabs (the
+  // device-level `tabs` this lane used to read never existed, so it filtered
+  // every device away and always drew the empty state). Same shape as
+  // chrome.sessions.getRecentlyClosed().
+  const perDevice = [];
+  for (const device of devices || []) {
+    const tabs = [];
+    const seen = new Set();
+    for (const session of device.sessions || []) {
+      const when = (session.lastModified || 0) * 1000;
+      const candidates = session.tab ? [session.tab] : (session.window && session.window.tabs) || [];
+      for (const tab of candidates) {
+        if (!isWebUrl(tab.url) || seen.has(tab.url)) continue;
+        seen.add(tab.url);
+        tabs.push({ url: tab.url, title: tab.title, when });
+      }
+    }
+    if (tabs.length) perDevice.push({ name: device.deviceName || 'Unknown device', tabs });
+  }
+  if (!perDevice.length) {
+    ul.appendChild(emptyRow('No open tabs from other devices yet. Needs Browser Sync with “Open tabs” turned on for both devices, and the tabs left open there.'));
     return;
   }
   const hidden = renderDevices.hidden || (renderDevices.hidden = new Set());
-  for (const d of devices) {
-    const tabs = d.tabs.filter((t) => isWebUrl(t.url) && !hidden.has(d.deviceName + '|' + t.url));
+  for (const device of perDevice) {
+    const tabs = device.tabs.filter((t) => !hidden.has(device.name + '|' + t.url));
     if (!tabs.length) continue;
     const name = document.createElement('li');
     name.className = 'device-name';
-    name.textContent = d.deviceName || 'Unknown device';
+    name.textContent = device.name;
     ul.appendChild(name);
     for (const t of tabs.slice(0, 15)) {
-      const key = d.deviceName + '|' + t.url;
+      const key = device.name + '|' + t.url;
       ul.appendChild(itemRow({
         url: t.url,
         title: t.title,
-        metaHtml: escapeHtml(domainOf(t.url)),
+        metaHtml: `${t.when ? escapeHtml(ageString(t.when)) + ' · ' : ''}${escapeHtml(domainOf(t.url))}`,
         onDismiss: async () => { hidden.add(key); },
       }));
     }
   }
   if (!ul.children.length) {
-    ul.appendChild(emptyRow('No synced devices with open tabs.'));
+    ul.appendChild(emptyRow('Every tab from your other devices has been dismissed.'));
   }
 }
 
