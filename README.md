@@ -80,7 +80,10 @@ invalid and the extension silently stops loading.
 - The save notification is a `chrome.notifications` basic notification, so the
   browser will auto-dismiss it after a few seconds and Windows may group or
   suppress it under Focus Assist. Chrome rejects `data:` URLs for a
-  notification's `iconUrl`, so it uses the `_favicon/` endpoint instead.
+  notification's `iconUrl`, so it uses the `_favicon/` endpoint instead. Because
+  Chrome ties the OS toast identity to the notification id, each save uses a
+  fresh id (and clears the previous notification); a fixed id would pop only
+  once, then update the entry already in the notification center silently.
 - Dismisses in the "other devices" lane do not persist.
 - `MAX_ITEMS` (200) is duplicated in `background.js` and `newtab.js`; the two
   caps could drift apart if one is edited.

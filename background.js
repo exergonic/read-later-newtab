@@ -52,18 +52,29 @@ function noteIcon(url) {
   return `${chrome.runtime.getURL('/_favicon/')}?pageUrl=${encodeURIComponent(url)}&size=64`;
 }
 
-function notifySaved(url, title) {
+// The notification id must be unique per save. Chromium keys the OS toast on it
+// (on Windows the notification id is hashed into the toast's Group+Tag) and, for
+// a toast whose tag is already in the Action Center, it sets SuppressPopup -
+// so a fixed id pops exactly once and every later save replaces that entry
+// silently. The extension API exposes no `renotify` flag to opt out, and the
+// Action Center keeps the entry for the whole session, which is why only the
+// first save of a session used to be visible. The previous notification is
+// cleared first so the Action Center keeps one "saved" entry instead of one per
+// save.
+async function notifySaved(url, title) {
   const name = (title || '').replace(/\s+[|–—-]\s+.*$/, '').trim().slice(0, 80);
-  return chrome.notifications
-    .create('read-later-saved', {
+  try {
+    const previous = await chrome.notifications.getAll();
+    await Promise.all(Object.keys(previous).map((id) => chrome.notifications.clear(id)));
+    await chrome.notifications.create(`read-later-saved-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, {
       type: 'basic',
       iconUrl: noteIcon(url),
       title: name || 'Page saved',
       message: 'Added to your Read Later list.',
       contextMessage: 'Read Later New Tab',
       priority: 0,
-    })
-    .catch(() => {}); // notifications can fail if the OS denies them; never block the save
+    });
+  } catch { /* notifications can fail if the OS denies them; never block the save */ }
 }
 
 async function addItem(url, title) {
@@ -72,7 +83,7 @@ async function addItem(url, title) {
   if (list.some((item) => item.url === url)) return false; // already saved
   list.unshift({ url, title: (title || url || '').trim().slice(0, 200) || url, savedAt: Date.now() });
   await saveList(list);
-  notifySaved(url, title);
+  await notifySaved(url, title);
   return true;
 }
 
