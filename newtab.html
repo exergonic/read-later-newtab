@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Tab — Read Later</title>
+<link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+<main>
+  <section class="pins" id="lane-pinned">
+    <div class="pin-grid" id="pin-grid"></div>
+    <p class="hint" id="pin-hint">Pin the sites you open every day. Drag a tile to reorder.</p>
+    <form id="pin-form" autocomplete="off" hidden>
+      <input id="pin-input" type="text" placeholder="Paste a URL to pin…" aria-label="Add a site to the tile grid">
+      <button type="submit" title="Pin site">+</button>
+      <button type="button" id="pin-cancel" title="Cancel">✕</button>
+    </form>
+    <button class="pin-add" id="pin-add" title="Add a site">
+      <span class="pin-add-icon">+</span>
+      <span class="pin-add-label">Add site</span>
+    </button>
+  </section>
+
+  <section class="lane" id="lane-saved">
+    <div class="lane-head">
+      <h2>Read later <span class="count" id="saved-count"></span></h2>
+      <form id="add-form" autocomplete="off">
+        <input id="add-url" type="text" placeholder="Paste a URL…" aria-label="Add a URL to read later">
+        <button type="submit" title="Add to read later">+</button>
+      </form>
+    </div>
+    <p class="hint">Right-click any page or link → “Save page to read later”, or press Ctrl+Shift+E (⌘⇧E on Mac).</p>
+    <ul class="items" id="saved-items"></ul>
+  </section>
+
+  <section class="lane" id="lane-closed">
+    <div class="lane-head">
+      <h2>Recently closed</h2>
+    </div>
+    <p class="hint">Closed tabs land here automatically — close freely, nothing is lost.</p>
+    <ul class="items" id="closed-items"></ul>
+  </section>
+
+  <section class="lane" id="lane-devices">
+    <div class="lane-head">
+      <h2>From your other devices</h2>
+    </div>
+    <p class="hint" id="devices-hint">Tabs open on your synced devices show up here. Needs Brave Sync with tab sync turned on.</p>
+    <ul class="items" id="device-items"></ul>
+  </section>
+</main>
+<script src="newtab.js"></script>
+</body>
+</html>
