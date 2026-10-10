@@ -48,6 +48,12 @@ appears on your desktop new tab page. Requires Brave Sync with tab syncing on.
 **Note:** dismisses in this lane are not persisted — they reset when you open a
 new tab.
 
+**Background.** **Background** at the bottom of the page offers five dark
+presets and **Choose image…** for a picture from your disk. A chosen image is
+downscaled to 1920 px on the long side, re-encoded and stored locally, and sits
+behind a scrim so the tiles and lists stay readable. **Reset** returns to the
+plain dark page.
+
 ## Install
 
 This is an unpacked extension — there is no browser-store listing, so you load
@@ -87,6 +93,8 @@ invalid and the extension silently stops loading.
   it has no icon for.
 - "From your other devices" reads tabs Brave Sync already syncs; nothing new
   leaves your machine because of this extension.
+- A background image you choose is downscaled and re-encoded inside the page and
+  kept in `chrome.storage.local`. It is never uploaded anywhere.
 - Permissions requested and why: `storage` (your lists), `tabs` (read the
   current page's URL and title when you pin or save it), `contextMenus` (the
   right-click entries), `sessions` (Recently closed + synced device tabs),
@@ -127,6 +135,11 @@ Neither makes a network request.
 - A tile is reordered by dropping it on another tile: the dragged tile lands on
   the side the drop marker shows. Dropping in the gap *between* tiles does
   nothing.
+- A stored background image lives in `chrome.storage.local`, so it is capped at
+  1920 px on the long side and re-encoded until the copy fits in ~2.4 MB (the
+  quota is about 10 MB). A file that cannot be read as an image, or that stays
+  too large, is refused with a message instead of being stored. The background
+  is fixed to the viewport, so it does not scroll with the page.
 - `MAX_ITEMS` (200) is duplicated in `background.js` and `newtab.js`; the two
   caps could drift apart if one is edited.
 - A tile's label is derived from the page title or hostname and clipped to 28
