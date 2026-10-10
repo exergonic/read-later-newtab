@@ -50,6 +50,17 @@
     <ul class="items" id="device-items"></ul>
   </section>
 </main>
+<footer class="bg">
+  <button type="button" id="bg-open" aria-expanded="false" aria-controls="bg-panel">Background</button>
+  <div class="bg-panel" id="bg-panel" hidden>
+    <div class="bg-swatches" id="bg-swatches"></div>
+    <div class="bg-actions">
+      <label class="bg-file">Choose image…<input type="file" id="bg-file" accept="image/*"></label>
+      <button type="button" id="bg-reset">Reset</button>
+    </div>
+    <p class="hint" id="bg-status"></p>
+  </div>
+</footer>
 <script src="newtab.js"></script>
 </body>
 </html>

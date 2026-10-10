@@ -5,6 +5,7 @@
 const STORE_KEY = 'readLater';
 const DISMISSED_KEY = 'dismissedSessions';
 const PINNED_KEY = 'pinnedSites';
+const BACKGROUND_KEY = 'background';
 const MAX_ITEMS = 200;
 const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -386,6 +387,141 @@ $('#pin-form').addEventListener('submit', async (e) => {
   await renderPinned();
 });
 
+// --- background -------------------------------------------------------------
+
+// Dark enough that the dim tile labels and hints stay readable on top.
+const BG_PRESETS = [
+  { id: 'midnight', label: 'Midnight', css: 'radial-gradient(1100px 620px at 18% -10%, #1d2c4d 0%, #16181d 62%)' },
+  { id: 'ember', label: 'Ember', css: 'radial-gradient(1000px 640px at 82% 4%, #3c2029 0%, #16181d 66%)' },
+  { id: 'forest', label: 'Forest', css: 'radial-gradient(1000px 640px at 12% 8%, #16302b 0%, #16181d 66%)' },
+  { id: 'dusk', label: 'Dusk', css: 'linear-gradient(160deg, #241b33 0%, #16181d 55%, #10202c 100%)' },
+  { id: 'graphite', label: 'Graphite', css: 'linear-gradient(180deg, #232830 0%, #16181d 72%)' },
+];
+// A photo behind the tiles needs a scrim; the presets are already this dark.
+// Kept heavy enough that the dim tile labels stay readable over a loud photo.
+const BG_SCRIM = 'linear-gradient(rgba(22, 24, 29, .8), rgba(22, 24, 29, .91))';
+const BG_MAX_SIDE = 1920;
+// Base64 length cap, comfortably inside the ~10 MB chrome.storage.local quota.
+const BG_MAX_CHARS = 2400000;
+
+async function getBackground() {
+  const data = await chrome.storage.local.get(BACKGROUND_KEY);
+  return data[BACKGROUND_KEY] || null;
+}
+
+function backgroundCss(setting) {
+  if (!setting) return '';
+  if (setting.kind === 'preset') {
+    const preset = BG_PRESETS.find((p) => p.id === setting.id);
+    return preset ? preset.css : '';
+  }
+  if (setting.kind === 'image' && typeof setting.data === 'string') {
+    return `${BG_SCRIM}, url(${JSON.stringify(setting.data)})`;
+  }
+  return '';
+}
+
+function applyBackground(setting) {
+  const css = backgroundCss(setting);
+  const style = document.body.style;
+  style.backgroundImage = css;
+  style.backgroundSize = css ? 'cover' : '';
+  style.backgroundPosition = css ? 'center' : '';
+  style.backgroundRepeat = css ? 'no-repeat' : '';
+  style.backgroundAttachment = css ? 'fixed' : '';
+  for (const btn of $('#bg-swatches').querySelectorAll('button')) {
+    btn.setAttribute('aria-pressed', String(Boolean(css) && setting.kind === 'preset' && setting.id === btn.dataset.id));
+  }
+}
+
+let bgStatusTimer = 0;
+function setBgStatus(text) {
+  $('#bg-status').textContent = text;
+  clearTimeout(bgStatusTimer);
+  if (text) bgStatusTimer = setTimeout(() => { $('#bg-status').textContent = ''; }, 8000);
+}
+
+function renderSwatches() {
+  const box = $('#bg-swatches');
+  for (const preset of BG_PRESETS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bg-swatch';
+    btn.dataset.id = preset.id;
+    btn.title = preset.label;
+    btn.setAttribute('aria-label', preset.label);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.style.backgroundImage = preset.css;
+    btn.addEventListener('click', async () => {
+      const setting = { kind: 'preset', id: preset.id };
+      await chrome.storage.local.set({ [BACKGROUND_KEY]: setting });
+      applyBackground(setting);
+      setBgStatus('');
+    });
+    box.appendChild(btn);
+  }
+}
+
+// Downscale and re-encode in the page: the stored copy has to fit in
+// chrome.storage.local, so a full-resolution photo is not an option.
+async function imageBackground(file) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    return null;
+  }
+  const scale = Math.min(1, BG_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const w = Math.max(1, Math.round(bitmap.width * scale));
+  const h = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  if (bitmap.close) bitmap.close();
+  let quality = 0.85;
+  let data = canvas.toDataURL('image/jpeg', quality);
+  while (data.length > BG_MAX_CHARS && quality > 0.45) {
+    quality -= 0.1;
+    data = canvas.toDataURL('image/jpeg', quality);
+  }
+  if (data.length > BG_MAX_CHARS) return null;
+  return { kind: 'image', data, name: file.name.slice(0, 120), w, h };
+}
+
+$('#bg-open').addEventListener('click', () => {
+  const panel = $('#bg-panel');
+  panel.hidden = !panel.hidden;
+  $('#bg-open').setAttribute('aria-expanded', String(!panel.hidden));
+});
+
+$('#bg-file').addEventListener('change', async (e) => {
+  const input = e.target;
+  const file = input.files && input.files[0];
+  input.value = '';                             // so the same file can be picked twice
+  if (!file) return;
+  setBgStatus('Reading image…');
+  const setting = await imageBackground(file);
+  if (!setting) {
+    setBgStatus('Not an image this browser can read, or too large to keep locally.');
+    return;
+  }
+  try {
+    await chrome.storage.local.set({ [BACKGROUND_KEY]: setting });
+  } catch {
+    setBgStatus('Could not store that image locally — try a smaller one.');
+    return;
+  }
+  applyBackground(setting);
+  setBgStatus(`Using ${setting.name} (${setting.w}×${setting.h}).`);
+});
+
+$('#bg-reset').addEventListener('click', async () => {
+  await chrome.storage.local.remove(BACKGROUND_KEY);
+  applyBackground(null);
+  setBgStatus('Background reset.');
+});
+
 // --- init --------------------------------------------------------------------
 
 $('#add-form').addEventListener('submit', async (e) => {
@@ -399,5 +535,6 @@ $('#add-form').addEventListener('submit', async (e) => {
 });
 
 (async function init() {
-  await Promise.all([renderPinned(), renderSaved(), renderClosed(), renderDevices()]);
+  renderSwatches();
+  await Promise.all([renderPinned(), renderSaved(), renderClosed(), renderDevices(), getBackground().then(applyBackground)]);
 })();

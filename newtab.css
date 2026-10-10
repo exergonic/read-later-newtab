@@ -233,3 +233,65 @@ h2 {
 .item-actions button:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
 .device-name { color: var(--dim); font-size: 12.5px; margin: 10px 0 2px; font-weight: 600; }
 .empty { color: var(--dim); font-size: 14px; padding: 8px; }
+/* --- background picker ---------------------------------------------------- */
+.bg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 48px;
+}
+.bg-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+#bg-open {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--dim);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+#bg-open:hover, #bg-open[aria-expanded="true"] { color: var(--text); border-color: var(--border); }
+.bg-swatches { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.bg-swatch {
+  width: 66px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+}
+.bg-swatch:hover { filter: brightness(1.15); }
+.bg-swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(122, 162, 247, .35); }
+.bg-actions { display: flex; gap: 10px; align-items: center; }
+.bg-file, #bg-reset {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.bg-file:hover, #bg-reset:hover { border-color: #3a4150; }
+/* Kept in the layer but invisible: `display: none` would take the input out of
+   the tab order and leave the picker unreachable by keyboard. */
+.bg-file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.bg-file:focus-within { border-color: var(--accent); }
+#bg-status { margin: 0; min-height: 17px; text-align: center; }
