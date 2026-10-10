@@ -42,11 +42,12 @@ open the new tab.
 freely instead of hoarding tabs. ↺ reopens the tab, ✕ dismisses it. Dismisses
 persist across new tabs.
 
-**4. From your other devices.** Tabs open on your synced devices (e.g. your
-phone) show up here, via Brave Sync. On mobile, just leave the tab open; it
-appears on your desktop new tab page. Requires Brave Sync with tab syncing on.
-**Note:** dismisses in this lane are not persisted — they reset when you open a
-new tab.
+**4. From your other devices.** Tabs left open on your synced devices (e.g. your
+phone) show up here, via Sync's "Open tabs" data type — on desktop
+`brave://settings/braveSync` → **Choose what to sync** → *Open tabs*, and the
+matching setting on the phone. On mobile, just leave the tab open and it appears
+on your desktop new tab page. Each row shows how long ago that tab was last seen
+and its host; clicking one opens it. Up to 15 tabs per device are listed.
 
 **Background.** **Background** at the bottom of the page offers five dark
 presets and **Choose image…** for a picture from your disk. A chosen image is
@@ -131,7 +132,10 @@ Neither makes a network request.
   Chrome ties the OS toast identity to the notification id, each save uses a
   fresh id (and clears the previous notification); a fixed id would pop only
   once, then update the entry already in the notification center silently.
-- Dismisses in the "other devices" lane do not persist.
+- Dismisses in the "other devices" lane do not persist — they reset when you open
+  a new tab. The lane reads whatever Sync currently reports, so a tab you closed
+  on the phone disappears on its own, and one that is still open there comes
+  back.
 - A tile is reordered by dropping it on another tile: the dragged tile lands on
   the side the drop marker shows. Dropping in the gap *between* tiles does
   nothing.
