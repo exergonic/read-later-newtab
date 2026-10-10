@@ -47,7 +47,9 @@ phone) show up here, via Sync's "Open tabs" data type — on desktop
 `brave://settings/braveSync` → **Choose what to sync** → *Open tabs*, and the
 matching setting on the phone. On mobile, just leave the tab open and it appears
 on your desktop new tab page. Each row shows how long ago that tab was last seen
-and its host; clicking one opens it. Up to 15 tabs per device are listed.
+and its host; clicking one opens it, **+** copies it into your read-later list
+(rows already in that list show **✓** instead), and **✕** dismisses it. Up to 15
+tabs per device are listed.
 
 **Background.** **Background** at the bottom of the page offers five dark
 presets and **Choose image…** for a picture from your disk. A chosen image is
