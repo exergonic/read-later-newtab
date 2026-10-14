@@ -24,6 +24,12 @@ No accounts, no cloud, no analytics.
 
 Four rows on every new tab.
 
+Nothing on this page opens a tab by default. Clicking a link or a tile loads it
+in this tab, the way a plain link does, so following things from here never
+leaves the new tab page behind as an extra tab in the strip;
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click or middle-click still opens a new tab when
+you want one.
+
 **1. Pinned tiles.** A grid of site icons, the way Brave's own new tab works.
 Click a tile to open it, ✕ (on hover) to unpin it, drag a tile to reorder it —
 the order persists. Add a site with **Add site** below the grid, or right-click

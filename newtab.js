@@ -74,7 +74,13 @@ async function dismissSession(sessionId) {
   await chrome.storage.local.set({ [DISMISSED_KEY]: [...dismissed].slice(-500) });
 }
 
-function openUrl(url) {
+// Nothing clicked on this page opens a tab by default: the new tab page is
+// throwaway, so a tab per click is what left the strip full of new tab pages
+// whose links had already been followed. Links load in this tab instead (with
+// the browser's own "modified click = new tab" kept intact), so this helper is
+// only for the one action here that is not a link: "Reopen", which brings a
+// closed tab back as its own tab.
+function openInNewTab(url) {
   chrome.tabs.create({ url });
 }
 
@@ -87,10 +93,9 @@ function itemRow({ url, title, metaHtml, onDismiss, onReopen, onSave, saved }) {
   a.href = url;
   a.textContent = title || url;
   a.title = url;
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    openUrl(url);
-  });
+  // Deliberately no click handler: the browser follows the href in this tab (the
+  // new tab page one is a throwaway), and ctrl/cmd/shift-click and middle-click
+  // keep their usual "open in a new tab" behavior for free.
   const meta = document.createElement('span');
   meta.className = 'item-meta';
   meta.innerHTML = metaHtml;
@@ -213,7 +218,8 @@ async function renderClosed() {
       metaHtml: `${t.when ? escapeHtml(ageString(t.when)) + ' · ' : ''}${escapeHtml(domainOf(t.url))}`,
       onDismiss: () => dismissSession(t.sessionId),
       onReopen: async () => {
-        try { await chrome.sessions.restore(t.sessionId); } catch { openUrl(t.url); }
+        // Restoring brings the tab back as its own tab, so the fallback matches.
+        try { await chrome.sessions.restore(t.sessionId); } catch { openInNewTab(t.url); }
       },
     }));
   }
@@ -346,7 +352,12 @@ function pinTile(site) {
   });
 
   li.append(remove, box, label);
-  li.addEventListener('click', () => openUrl(site.url));
+  li.addEventListener('click', (e) => {
+    // A tile is a list item rather than a link, so the browser's new-tab click
+    // behavior has to be reproduced by hand.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) openInNewTab(site.url);
+    else location.assign(site.url);
+  });
   return li;
 }
 
